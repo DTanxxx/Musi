@@ -111,7 +111,12 @@ public class Key : MonoBehaviour
         }
     }
 
-    private IEnumerator FadeOutKeyAndDestroy()
+    public bool GetIsPressed()
+    {
+        return isPressed;
+    }
+
+    public IEnumerator FadeOutKeyAndDestroy()
     {
         fadingOut = true;
         float time = 0.0f;

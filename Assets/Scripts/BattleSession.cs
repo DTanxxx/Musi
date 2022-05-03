@@ -155,12 +155,27 @@ public class BattleSession : MonoBehaviour
         levelManager.LoadSummaryScene();   
     }
 
+    private void FailAllPressedContinuous()
+    {
+        foreach (var keyInProcessing in columnsOfKeysInProcessing)
+        {
+            if (keyInProcessing != null && keyInProcessing.GetComponent<Key>().GetIsPressed()
+                && keyInProcessing.GetComponent<Key>().GetIsContinuous())
+            {
+                // fail this key
+                AddToScore(0);
+                StartCoroutine(keyInProcessing.GetComponent<Key>().FadeOutKeyAndDestroy());
+            }
+        }
+    }
+
     public void Resume()
     {
         isPaused = false;
         pauseMenu.SetActive(false);
         Time.timeScale = 1.0f;
         AudioListener.pause = false;
+        FailAllPressedContinuous();
     }
 
     public void AddToScore(int score)

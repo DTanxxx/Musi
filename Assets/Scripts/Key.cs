@@ -7,7 +7,7 @@ public class Key : MonoBehaviour
     [SerializeField] private bool isContinuous = false;
     [SerializeField] private GameObject correctKeyPressVFX = null;
     [SerializeField] private float keyFadeOutDuration = 5.0f;
-    [SerializeField] private float scorePerKey = 15.0f;
+    [SerializeField] private int scorePerKey = 15;
     [SerializeField] private float marginOfErrorAtBaseline = 3.0f;
 
     private float moveSpeed;
@@ -15,6 +15,10 @@ public class Key : MonoBehaviour
     private bool fadingOut = false;
     private GameObject baseLine;
     private float keyHeight;
+    private GameObject associatedVFX;
+
+    public delegate void OnRelease(int scoreToAdd);
+    public static OnRelease onRelease;
 
     private void Start()
     {
@@ -41,7 +45,7 @@ public class Key : MonoBehaviour
             if (transform.position.y + keyHeight / 2 - baseLine.transform.position.y <= -marginOfErrorAtBaseline)
             {
                 // Left baseline, add points and destroy key
-                FindObjectOfType<GameSession>().AddToScore(scorePerKey);
+                onRelease(scorePerKey);
                 isPressed = false;
                 Destroy(gameObject);
             }
@@ -56,19 +60,27 @@ public class Key : MonoBehaviour
         {
             // Spawn particle effect
             GameObject VFXInstance = Instantiate(correctKeyPressVFX, transform.position, correctKeyPressVFX.transform.rotation);
-            FindObjectOfType<GameSession>().AddToScore(scorePerKey);
+            onRelease(scorePerKey);
             // Destory key
             Destroy(gameObject);
         }
         else if (isContinuous && isValid)
         {
             // Spawn particle effect
-            //GameObject VFXInstance = Instantiate(correctKeyPressVFX, transform.position, correctKeyPressVFX.transform.rotation);
+            GameObject VFXInstance = Instantiate(correctKeyPressVFX, 
+                new Vector3(transform.position.x, baseLine.transform.position.y, transform.position.z),
+                correctKeyPressVFX.transform.rotation);
+            var main = VFXInstance.GetComponent<ParticleSystem>().main;
+            main.loop = true;
+            associatedVFX = VFXInstance;
+            // Make the key Visible Outside Mask
+            GetComponent<SpriteRenderer>().maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
             Debug.Log("Pressed a continuous key");
             isPressed = true;
         }
         else
         {
+            onRelease(0);
             StartCoroutine(FadeOutKeyAndDestroy());
         }
     }
@@ -86,15 +98,17 @@ public class Key : MonoBehaviour
         {
             // Good release
             Debug.Log("Good release");
-            FindObjectOfType<GameSession>().AddToScore(scorePerKey);
+            onRelease(scorePerKey);
             isPressed = false;
+            Destroy(gameObject);
         }
         else
         {
             // Still over baseline, no points and destroy key.
+            onRelease(0);
+            StartCoroutine(FadeOutKeyAndDestroy());
             Debug.Log("Released too early!");
         }
-        Destroy(gameObject);
     }
 
     private IEnumerator FadeOutKeyAndDestroy()
@@ -113,5 +127,22 @@ public class Key : MonoBehaviour
         }
         // Fade out the key, then destroy;
         Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (associatedVFX != null)
+        {
+            Destroy(associatedVFX);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.GetComponent<KeyDestroyer>())
+        {
+            onRelease(0);
+            Destroy(gameObject);
+        }
     }
 }

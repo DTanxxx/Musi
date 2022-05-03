@@ -8,12 +8,12 @@ public class KeySpawner : MonoBehaviour
     [SerializeField] private float keySpeed = 1.0f;
     [SerializeField] private Transform[] spawnPositions;
 
-    private GameSession gameSession;
+    private BattleSession battleSession;
     private int prevIndex;
 
     private void Start()
     {
-        gameSession = FindObjectOfType<GameSession>();
+        battleSession = FindObjectOfType<BattleSession>();
     }
 
     public void SpawnKey(GameObject key)
@@ -26,7 +26,7 @@ public class KeySpawner : MonoBehaviour
         }
         prevIndex = index;
         var keyInstance = Instantiate(key, spawnPositions[index].position, Quaternion.identity);
-        gameSession.AddToKeyStream(keyInstance, index);
+        battleSession.AddToKeyStream(keyInstance, index);
         keyInstance.GetComponent<Key>().SetSpeed(keySpeed);
     }
 }
